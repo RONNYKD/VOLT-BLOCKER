@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">VOLT</string>
+    <string name="accessibility_service_description">VOLT uses this accessibility service to help you stay focused by blocking distracting apps during your focus sessions. This service monitors app launches and redirects you to the home screen when you try to open a blocked app.</string>
+</resources>
