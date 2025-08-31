@@ -25,6 +25,7 @@ import java.util.Set;
 public class VoltAccessibilityService extends AccessibilityService {
     private static final String TAG = "VoltAccessibility";
     private static VoltAccessibilityService instance;
+    private static boolean serviceRunning = false;
     private Set<String> blockedPackages = new HashSet<>();
     private Set<String> blockedWebsites = new HashSet<>();
     private boolean isBlockingActive = false;
@@ -102,6 +103,7 @@ public class VoltAccessibilityService extends AccessibilityService {
         Log.d(TAG, "Accessibility service connected");
         
         instance = this;
+        serviceRunning = true;
         
         // Configure accessibility service
         AccessibilityServiceInfo info = getServiceInfo();
@@ -122,7 +124,15 @@ public class VoltAccessibilityService extends AccessibilityService {
     public boolean onUnbind(Intent intent) {
         Log.d(TAG, "Accessibility service unbound");
         instance = null;
+        serviceRunning = false;
         return super.onUnbind(intent);
+    }
+    
+    /**
+     * Check if accessibility service is currently running
+     */
+    public static boolean isServiceRunning() {
+        return serviceRunning && instance != null;
     }
 
     /**
@@ -265,9 +275,6 @@ public class VoltAccessibilityService extends AccessibilityService {
     /**
      * Static methods for controlling the service from outside
      */
-    public static boolean isServiceRunning() {
-        return instance != null;
-    }
 
     public static void setBlockedPackages(List<String> packages) {
         if (instance != null) {

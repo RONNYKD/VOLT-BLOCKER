@@ -4,3 +4,4 @@ export { ProtectionTestComponent } from './ProtectionTestComponent';
 export { UninstallProtectionTest } from './UninstallProtectionTest';
 export { ProtectionDebugger } from './ProtectionDebugger';
 export { ModuleConnectionTest } from './ModuleConnectionTest';
+export { default as EnhancedProtectionSetup } from './EnhancedProtectionSetup';

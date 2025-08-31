@@ -21,6 +21,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.Arguments;
 import com.volt.uninstallprotection.VoltDeviceAdminReceiver;
+import com.volt.appblocking.VoltPersistentService;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -89,12 +90,15 @@ public class VoltUninstallProtectionModule extends ReactContextBaseJavaModule {
 
             // Enable protection
             prefs.edit().putBoolean(PREF_PROTECTION_ACTIVE, true).apply();
+            
+            // Start persistent service to maintain protection in background
+            VoltPersistentService.startPersistentService(getReactApplicationContext());
 
             result.putBoolean("success", true);
             result.putString("message", "Uninstall protection enabled successfully");
             result.putArray("errors", Arguments.createArray());
 
-            Log.d(TAG, "Uninstall protection enabled successfully");
+            Log.d(TAG, "Uninstall protection enabled successfully with persistent service");
             promise.resolve(result);
 
         } catch (Exception e) {

@@ -106,6 +106,16 @@
           android:value="Uninstall protection monitoring" />
       </service>
       
+      <!-- Persistent Background Service -->
+      <service
+        android:name=".appblocking.VoltPersistentService"
+        android:foregroundServiceType="specialUse"
+        android:exported="false">
+        <property
+          android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+          android:value="Maintains app blocking and protection in background" />
+      </service>
+      
       <!-- Password Overlay Activity -->
       <activity
         android:name=".uninstallprotection.VoltPasswordOverlayActivity"

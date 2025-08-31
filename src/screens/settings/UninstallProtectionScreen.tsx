@@ -13,6 +13,8 @@ import { NativeModules } from 'react-native';
 import { useAppTheme } from '../../theme/nativewind-setup';
 import { ProtectionSetupWizard } from '../../components/protection/ProtectionSetupWizard';
 import { PasswordSetupModal } from '../../components/protection/PasswordSetupModal';
+import { EnhancedProtectionSetup } from '../../components/protection';
+import { persistentProtectionService } from '../../services/protection/PersistentProtectionService';
 
 const { VoltUninstallProtection } = NativeModules;
 
@@ -22,6 +24,7 @@ export const UninstallProtectionScreen: React.FC = () => {
   const [protectionActive, setProtectionActive] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [showPasswordSetup, setShowPasswordSetup] = useState(false);
+  const [showEnhancedSetup, setShowEnhancedSetup] = useState(false);
   const [protectionStatus, setProtectionStatus] = useState<any>(null);
   const [permissions, setPermissions] = useState<any>(null);
 
@@ -398,6 +401,16 @@ export const UninstallProtectionScreen: React.FC = () => {
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
             <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: '#00d4aa' }]}
+              onPress={() => setShowEnhancedSetup(true)}
+              disabled={isLoading}
+            >
+              <Text style={styles.actionButtonText}>
+                🛡️ Enhanced Protection Setup
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.primary }]}
               onPress={handleRunHealthCheck}
               disabled={isLoading}
@@ -599,6 +612,16 @@ export const UninstallProtectionScreen: React.FC = () => {
         onClose={() => setShowPasswordSetup(false)}
         onSuccess={() => {
           setShowPasswordSetup(false);
+          loadProtectionStatus();
+        }}
+      />
+
+      {/* Enhanced Protection Setup Modal */}
+      <EnhancedProtectionSetup
+        visible={showEnhancedSetup}
+        onClose={() => setShowEnhancedSetup(false)}
+        onProtectionEnabled={() => {
+          setShowEnhancedSetup(false);
           loadProtectionStatus();
         }}
       />
