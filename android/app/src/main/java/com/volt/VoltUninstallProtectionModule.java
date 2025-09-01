@@ -552,6 +552,138 @@ public class VoltUninstallProtectionModule extends ReactContextBaseJavaModule {
             promise.reject("GET_STATUS_ERROR", "Failed to get protection status", e);
         }
     }
+    
+    @ReactMethod
+    public void requestBatteryOptimizationExemption(Promise promise) {
+        try {
+            Context context = getReactApplicationContext();
+            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            String packageName = context.getPackageName();
+            
+            if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+                Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                intent.setData(android.net.Uri.parse("package:" + packageName));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("success", true);
+                result.putString("message", "Battery optimization exemption requested");
+                promise.resolve(result);
+            } else {
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("success", true);
+                result.putString("message", "Already exempt from battery optimization");
+                promise.resolve(result);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error requesting battery optimization exemption", e);
+            promise.reject("BATTERY_OPT_ERROR", "Failed to request battery optimization exemption: " + e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void checkBatteryOptimizationStatus(Promise promise) {
+        try {
+            Context context = getReactApplicationContext();
+            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            String packageName = context.getPackageName();
+            
+            boolean isIgnoring = powerManager.isIgnoringBatteryOptimizations(packageName);
+            
+            WritableMap result = Arguments.createMap();
+            result.putBoolean("isExempt", isIgnoring);
+            result.putString("status", isIgnoring ? "exempt" : "not_exempt");
+            result.putString("message", isIgnoring ? 
+                "App is exempt from battery optimization" : 
+                "App is subject to battery optimization - may affect background operation");
+            promise.resolve(result);
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking battery optimization status", e);
+            promise.reject("BATTERY_STATUS_ERROR", "Failed to check battery optimization status: " + e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void requestAutoStartPermission(Promise promise) {
+        try {
+            Context context = getReactApplicationContext();
+            String manufacturer = android.os.Build.MANUFACTURER.toLowerCase();
+            
+            Intent intent = null;
+            String message = "Auto-start settings opened for " + manufacturer;
+            
+            // Handle different OEM auto-start settings
+            switch (manufacturer) {
+                case "xiaomi":
+                    intent = new Intent("miui.intent.action.APP_PERM_EDITOR");
+                    intent.setClassName("com.miui.securitycenter", 
+                        "com.miui.permcenter.autostart.AutoStartManagementActivity");
+                    message = "Xiaomi auto-start settings opened. Please enable auto-start for VOLT.";
+                    break;
+                case "huawei":
+                    intent = new Intent();
+                    intent.setClassName("com.huawei.systemmanager", 
+                        "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity");
+                    message = "Huawei startup manager opened. Please enable auto-start for VOLT.";
+                    break;
+                case "oppo":
+                    intent = new Intent();
+                    intent.setClassName("com.coloros.safecenter", 
+                        "com.coloros.safecenter.permission.startup.StartupAppListActivity");
+                    message = "OPPO startup manager opened. Please enable auto-start for VOLT.";
+                    break;
+                case "vivo":
+                    intent = new Intent();
+                    intent.setClassName("com.vivo.permissionmanager", 
+                        "com.vivo.permissionmanager.activity.BgStartUpManagerActivity");
+                    message = "Vivo background startup opened. Please enable auto-start for VOLT.";
+                    break;
+                case "samsung":
+                    intent = new Intent();
+                    intent.setClassName("com.samsung.android.lool", 
+                        "com.samsung.android.sm.ui.battery.BatteryActivity");
+                    message = "Samsung battery settings opened. Please disable battery optimization for VOLT.";
+                    break;
+                default:
+                    // Generic approach
+                    intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    intent.setData(android.net.Uri.parse("package:" + context.getPackageName()));
+                    message = "App settings opened. Please check battery and auto-start settings.";
+                    break;
+            }
+            
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("success", true);
+                result.putString("message", message);
+                result.putString("manufacturer", manufacturer);
+                promise.resolve(result);
+            } else {
+                promise.reject("AUTOSTART_ERROR", "Could not determine auto-start settings for this device");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening auto-start settings", e);
+            // Fallback to generic settings
+            try {
+                Context context = getReactApplicationContext();
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(android.net.Uri.parse("package:" + context.getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("success", true);
+                result.putString("message", "App settings opened. Please check battery optimization settings.");
+                promise.resolve(result);
+            } catch (Exception fallbackError) {
+                promise.reject("AUTOSTART_ERROR", "Failed to open auto-start settings: " + e.getMessage());
+            }
+        }
+    }
 
     // ============ UTILITY METHODS ============
 

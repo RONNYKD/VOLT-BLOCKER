@@ -1,5 +1,6 @@
 package com.volt.appblocking;
 
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,9 +9,11 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import com.volt.MainActivity;
@@ -26,61 +29,175 @@ public class VoltPersistentService extends Service {
     private static final String PREFS_NAME = "volt_service_prefs";
     
     private PowerManager.WakeLock wakeLock;
+    private PowerManager.WakeLock partialWakeLock;
+    private PowerManager.WakeLock screenWakeLock;
     private NotificationManager notificationManager;
     private boolean isServiceRunning = false;
     
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "VoltPersistentService created");
+        Log.d(TAG, "VoltPersistentService created with enhanced persistence");
         
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         createNotificationChannel();
         
-        // Acquire partial wake lock to keep service running
+        // Initialize multiple wake locks for maximum persistence
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        
+        // Partial wake lock for background operation
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "VOLT::PersistentService");
+        
+        // Additional partial wake lock for redundancy
+        partialWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "VOLT::BackgroundProtection");
+        
+        // Screen wake lock for critical periods (used sparingly)
+        screenWakeLock = powerManager.newWakeLock(
+            PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "VOLT::CriticalProtection"
+        );
         
         isServiceRunning = true;
     }
     
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "VoltPersistentService started");
+        Log.d(TAG, "VoltPersistentService started with CRITICAL priority");
         
-        // Start as foreground service with persistent notification
-        startForeground(NOTIFICATION_ID, createPersistentNotification());
+        // Create CRITICAL priority notification
+        createCriticalNotificationChannel();
+        Notification notification = createCriticalPersistentNotification();
         
-        // Acquire wake lock if not already held
-        if (!wakeLock.isHeld()) {
-            wakeLock.acquire();
-        }
+        // Start as foreground service with MAXIMUM priority
+        startForeground(NOTIFICATION_ID, notification);
+        
+        // Acquire multiple wake locks for maximum persistence
+        acquireAllWakeLocks();
         
         // Monitor and restart accessibility service if needed
         startAccessibilityMonitoring();
+        
+        // Start service health monitoring
+        startServiceHealthMonitoring();
         
         // Return START_STICKY to ensure service restarts if killed
         return START_STICKY;
     }
     
+    private void acquireAllWakeLocks() {
+        try {
+            // Acquire partial wake lock for background operation
+            if (wakeLock != null && !wakeLock.isHeld()) {
+                wakeLock.acquire();
+                Log.d(TAG, "Primary wake lock acquired");
+            }
+            
+            // Acquire secondary partial wake lock for redundancy
+            if (partialWakeLock != null && !partialWakeLock.isHeld()) {
+                partialWakeLock.acquire();
+                Log.d(TAG, "Secondary wake lock acquired");
+            }
+            
+            // Note: Screen wake lock is acquired only during critical operations
+            Log.d(TAG, "All wake locks acquired for maximum persistence");
+        } catch (Exception e) {
+            Log.e(TAG, "Error acquiring wake locks", e);
+        }
+    }
+    
+    private void startServiceHealthMonitoring() {
+        // Start a background thread to monitor service health
+        new Thread(() -> {
+            while (isServiceRunning) {
+                try {
+                    Thread.sleep(30000); // Check every 30 seconds
+                    
+                    // Verify wake locks are still held
+                    if (wakeLock != null && !wakeLock.isHeld()) {
+                        Log.w(TAG, "Primary wake lock lost - reacquiring");
+                        wakeLock.acquire();
+                    }
+                    
+                    if (partialWakeLock != null && !partialWakeLock.isHeld()) {
+                        Log.w(TAG, "Secondary wake lock lost - reacquiring");
+                        partialWakeLock.acquire();
+                    }
+                    
+                    // Check if accessibility service is still running
+                    if (!VoltAccessibilityService.isServiceRunning()) {
+                        Log.w(TAG, "Accessibility service not running - protection compromised");
+                    }
+                    
+                } catch (InterruptedException e) {
+                    Log.d(TAG, "Service health monitoring interrupted");
+                    break;
+                } catch (Exception e) {
+                    Log.e(TAG, "Error in service health monitoring", e);
+                }
+            }
+        }).start();
+    }
+    
     @Override
     public void onDestroy() {
-        Log.d(TAG, "VoltPersistentService destroyed");
+        Log.w(TAG, "VoltPersistentService destroyed - CRITICAL: Protection may be compromised!");
         
         isServiceRunning = false;
         
-        // Release wake lock
-        if (wakeLock != null && wakeLock.isHeld()) {
-            wakeLock.release();
-        }
+        // Release all wake locks
+        releaseAllWakeLocks();
         
-        // Restart service if protection is still active
+        // CRITICAL: Always restart service if protection is active
         if (isProtectionActive()) {
-            Log.w(TAG, "Service destroyed while protection active - scheduling restart");
-            scheduleServiceRestart();
+            Log.e(TAG, "Service destroyed while protection active - IMMEDIATE RESTART REQUIRED");
+            scheduleImmediateServiceRestart();
         }
         
         super.onDestroy();
+    }
+    
+    private void releaseAllWakeLocks() {
+        try {
+            if (wakeLock != null && wakeLock.isHeld()) {
+                wakeLock.release();
+                Log.d(TAG, "Primary wake lock released");
+            }
+            
+            if (partialWakeLock != null && partialWakeLock.isHeld()) {
+                partialWakeLock.release();
+                Log.d(TAG, "Secondary wake lock released");
+            }
+            
+            if (screenWakeLock != null && screenWakeLock.isHeld()) {
+                screenWakeLock.release();
+                Log.d(TAG, "Screen wake lock released");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error releasing wake locks", e);
+        }
+    }
+    
+    private void scheduleImmediateServiceRestart() {
+        try {
+            // Method 1: Immediate restart via AlarmManager
+            Intent restartIntent = new Intent(this, VoltPersistentService.class);
+            PendingIntent pendingIntent = PendingIntent.getService(
+                this, 1001, restartIntent, 
+                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE
+            );
+            
+            AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+            alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 
+                SystemClock.elapsedRealtime() + 1000, pendingIntent); // Restart in 1 second
+            
+            // Method 2: Backup restart via broadcast receiver
+            Intent broadcastIntent = new Intent("com.volt.RESTART_PROTECTION_SERVICE");
+            sendBroadcast(broadcastIntent);
+            
+            Log.w(TAG, "Service restart scheduled via multiple methods");
+        } catch (Exception e) {
+            Log.e(TAG, "CRITICAL: Failed to schedule service restart", e);
+        }
     }
     
     @Override
@@ -136,7 +253,24 @@ public class VoltPersistentService extends Service {
         }
     }
     
-    private Notification createPersistentNotification() {
+    private void createCriticalNotificationChannel() {
+        NotificationChannel channel = new NotificationChannel(
+            CHANNEL_ID,
+            "VOLT Critical Protection",
+            NotificationManager.IMPORTANCE_HIGH // HIGH importance for visibility
+        );
+        channel.setDescription("Critical protection service - DO NOT DISABLE");
+        channel.setShowBadge(true);
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        channel.enableLights(true);
+        channel.setLightColor(Color.RED);
+        channel.enableVibration(false); // Don't annoy user with vibration
+        
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        manager.createNotificationChannel(channel);
+    }
+
+    private Notification createCriticalPersistentNotification() {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent, 
@@ -144,14 +278,24 @@ public class VoltPersistentService extends Service {
         );
         
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("VOLT Protection Active")
-            .setContentText("App blocking and uninstall protection are running")
+            .setContentTitle("🛡️ VOLT Protection Active")
+            .setContentText("Protecting your focus commitment - DO NOT DISABLE")
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
             .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setPriority(NotificationCompat.PRIORITY_MAX) // MAXIMUM priority
+            .setCategory(NotificationCompat.CATEGORY_SYSTEM) // System category
+            .setOngoing(true) // Cannot be dismissed
+            .setAutoCancel(false) // Cannot be auto-cancelled
+            .setShowWhen(false)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setColor(Color.RED) // Red color for importance
             .build();
+    }
+
+    private Notification createPersistentNotification() {
+        // Legacy method - now calls critical version
+        return createCriticalPersistentNotification();
     }
     
     private void startAccessibilityMonitoring() {
