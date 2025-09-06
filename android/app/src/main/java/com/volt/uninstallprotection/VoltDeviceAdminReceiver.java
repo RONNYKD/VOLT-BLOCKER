@@ -65,7 +65,7 @@ public class VoltDeviceAdminReceiver extends DeviceAdminReceiver {
         // Check if password was recently verified
         long lastVerification = prefs.getLong("last_password_verification", 0);
         long currentTime = System.currentTimeMillis();
-        long verificationWindow = 30 * 1000; // 30 seconds window
+        long verificationWindow = 60 * 1000; // 60 seconds window
         
         if (currentTime - lastVerification < verificationWindow) {
             // Password was recently verified, allow disable
@@ -73,92 +73,18 @@ public class VoltDeviceAdminReceiver extends DeviceAdminReceiver {
             return "✅ Password verified. Device admin will be disabled.";
         }
         
-        // Show password dialog for protected state
-        showPasswordDialog(context);
-        
-        // CRITICAL: Return null to PREVENT disable until password is verified
-        // This blocks the disable request until proper authentication
-        return null;
+        // Instead of showing dialog, return instructions to open VOLT app
+        return "🔐 VOLT Uninstall Protection is ACTIVE!\n\n" +
+               "To disable protection:\n" +
+               "1. Open the VOLT app\n" +
+               "2. Go to Settings → Uninstall Protection\n" +
+               "3. Turn off protection with your password\n" +
+               "4. Then return here to disable device admin\n\n" +
+               "Or request emergency override (5-hour delay) in the VOLT app.\n\n" +
+               "Protection remains ACTIVE until proper authentication!";
     }
     
-    private void showPasswordDialog(Context context) {
-        try {
-            Log.d(TAG, "Showing password authentication dialog with override option");
-            
-            // Create dialog on UI thread
-            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                try {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle("🔐 VOLT Protection Authentication");
-                    builder.setMessage("Choose how to proceed:\n\n" +
-                                     "• Enter Password: Disable immediately\n" +
-                                     "• Request Override: 5-hour countdown, then 15-min window\n" +
-                                     "• Cancel: Keep protection active");
-                    
-                    // Create input field
-                    final EditText input = new EditText(context);
-                    input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                    input.setHint("Enter protection password");
-                    builder.setView(input);
-                    
-                    // Password verification button
-                    builder.setPositiveButton("Enter Password", (dialog, which) -> {
-                        String password = input.getText().toString();
-                        if (password.isEmpty()) {
-                            Toast.makeText(context, "❌ Password cannot be empty", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        
-                        if (verifyPassword(context, password)) {
-                            // Store verification timestamp to allow disable
-                            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-                            prefs.edit().putLong("last_password_verification", System.currentTimeMillis()).apply();
-                            
-                            Toast.makeText(context, "✅ Password verified. You can now disable device admin.", Toast.LENGTH_LONG).show();
-                            Log.d(TAG, "Password verified successfully - disable now allowed");
-                            
-                            // Trigger device admin disable request again
-                            triggerDeviceAdminDisable(context);
-                        } else {
-                            Toast.makeText(context, "❌ Incorrect password. Device admin remains active.", Toast.LENGTH_LONG).show();
-                            Log.d(TAG, "Password verification failed - disable blocked");
-                        }
-                    });
-                    
-                    // Emergency override button
-                    builder.setNeutralButton("Request Override", (dialog, which) -> {
-                        requestEmergencyOverride(context);
-                    });
-                    
-                    // Cancel button
-                    builder.setNegativeButton("Cancel", (dialog, which) -> {
-                        Toast.makeText(context, "Device admin disable canceled. Protection remains active.", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "Password dialog canceled");
-                    });
-                    
-                    builder.setCancelable(false);
-                    
-                    AlertDialog dialog = builder.create();
-                    
-                    // Make sure dialog appears on top
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        dialog.getWindow().setType(android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-                    } else {
-                        dialog.getWindow().setType(android.view.WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-                    }
-                    
-                    dialog.show();
-                    
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to show password dialog", e);
-                    Toast.makeText(context, "Authentication dialog failed to load", Toast.LENGTH_SHORT).show();
-                }
-            });
-            
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to create password dialog", e);
-        }
-    }
+    // Removed problematic dialog - users must authenticate through VOLT app instead
 
     private void requestEmergencyOverride(Context context) {
         try {

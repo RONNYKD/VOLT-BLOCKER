@@ -443,6 +443,50 @@ public class VoltUninstallProtectionModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void authorizeDeviceAdminDisable(String password, Promise promise) {
+        try {
+            // Verify password first
+            String storedHash = prefs.getString(PREF_PASSWORD_HASH, null);
+            if (storedHash == null) {
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("success", false);
+                result.putString("message", "No password set");
+                promise.resolve(result);
+                return;
+            }
+
+            String inputHash = hashString(password);
+            boolean isValid = storedHash.equals(inputHash);
+
+            if (isValid) {
+                // Store verification timestamp to allow device admin disable
+                prefs.edit().putLong("last_password_verification", System.currentTimeMillis()).apply();
+                
+                Log.d(TAG, "Device admin disable authorized - password verified");
+                
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("success", true);
+                result.putString("message", "Password verified. You can now disable device admin in Android settings.");
+                promise.resolve(result);
+            } else {
+                Log.d(TAG, "Device admin disable authorization failed - incorrect password");
+                
+                WritableMap result = Arguments.createMap();
+                result.putBoolean("success", false);
+                result.putString("message", "Incorrect password");
+                promise.resolve(result);
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to authorize device admin disable", e);
+            WritableMap result = Arguments.createMap();
+            result.putBoolean("success", false);
+            result.putString("message", "Authorization failed");
+            promise.resolve(result);
+        }
+    }
+
+    @ReactMethod
     public void setupPIN(String pin, Promise promise) {
         try {
             String hashedPIN = hashString(pin);

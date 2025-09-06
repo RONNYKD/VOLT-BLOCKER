@@ -108,38 +108,69 @@ export const UninstallProtectionScreen: React.FC = () => {
         setIsLoading(false);
       }
     } else {
-      // Disable protection with confirmation
-      Alert.alert(
-        'Disable Protection',
-        'Are you sure you want to disable uninstall protection? This will make VOLT vulnerable to impulsive uninstallation.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Disable',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                setIsLoading(true);
+      // Disable protection with password authentication
+      handleDisableProtection();
+    }
+  };
+
+  const handleDisableProtection = () => {
+    Alert.prompt(
+      'Disable Protection',
+      'Enter your protection password to disable uninstall protection:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disable',
+          style: 'destructive',
+          onPress: async (password) => {
+            if (!password) {
+              Alert.alert('Error', 'Password is required');
+              return;
+            }
+
+            try {
+              setIsLoading(true);
+              
+              // First authorize device admin disable
+              const authResult = await VoltUninstallProtection.authorizeDeviceAdminDisable(password);
+              
+              if (authResult.success) {
+                // Now disable protection
                 const result = await VoltUninstallProtection.disableProtection();
 
                 if (result.success) {
                   setProtectionActive(false);
-                  Alert.alert('Success', 'Uninstall protection disabled');
+                  Alert.alert(
+                    'Protection Disabled', 
+                    'Uninstall protection has been disabled. You may also need to disable device admin in Android settings.',
+                    [
+                      { text: 'OK' },
+                      {
+                        text: 'Open Settings',
+                        onPress: () => {
+                          VoltUninstallProtection.openDeviceAdminSettings();
+                        }
+                      }
+                    ]
+                  );
                   await loadProtectionStatus();
                 } else {
                   Alert.alert('Error', result.message || 'Failed to disable protection');
                 }
-              } catch (error) {
-                console.error('Failed to disable protection:', error);
-                Alert.alert('Error', 'Failed to disable protection');
-              } finally {
-                setIsLoading(false);
+              } else {
+                Alert.alert('Authentication Failed', authResult.message || 'Incorrect password');
               }
+            } catch (error) {
+              console.error('Failed to disable protection:', error);
+              Alert.alert('Error', 'Failed to disable protection');
+            } finally {
+              setIsLoading(false);
             }
           }
-        ]
-      );
-    }
+        }
+      ],
+      'secure-text'
+    );
   };
 
 
@@ -376,6 +407,63 @@ export const UninstallProtectionScreen: React.FC = () => {
                 ⚙️ Setup Wizard
               </Text>
             </TouchableOpacity>
+
+            {protectionActive && (
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.secondary }]}
+                onPress={() => {
+                  Alert.prompt(
+                    'Authorize Device Admin Disable',
+                    'Enter your protection password to authorize disabling device admin in Android settings:',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Authorize',
+                        onPress: async (password) => {
+                          if (!password) {
+                            Alert.alert('Error', 'Password is required');
+                            return;
+                          }
+
+                          try {
+                            setIsLoading(true);
+                            const result = await VoltUninstallProtection.authorizeDeviceAdminDisable(password);
+                            
+                            if (result.success) {
+                              Alert.alert(
+                                'Authorization Successful',
+                                'You can now disable device admin in Android settings. You have 60 seconds.',
+                                [
+                                  {
+                                    text: 'Open Settings',
+                                    onPress: () => {
+                                      VoltUninstallProtection.openDeviceAdminSettings();
+                                    }
+                                  }
+                                ]
+                              );
+                            } else {
+                              Alert.alert('Authorization Failed', result.message || 'Incorrect password');
+                            }
+                          } catch (error) {
+                            console.error('Failed to authorize:', error);
+                            Alert.alert('Error', 'Authorization failed');
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }
+                      }
+                    ],
+                    'secure-text'
+                  );
+                }}
+                disabled={isLoading}
+              >
+                <Text style={styles.actionButtonText}>
+                  🔐 Authorize Device Admin Disable
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.error }]}
