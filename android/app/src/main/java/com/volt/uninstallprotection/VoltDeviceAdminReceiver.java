@@ -55,21 +55,30 @@ public class VoltDeviceAdminReceiver extends DeviceAdminReceiver {
         // Check if override is available
         String overrideState = getOverrideState(prefs);
         if ("available".equals(overrideState)) {
+            // Clear the override state after use
+            prefs.edit().putString("emergency_override_state", "used").apply();
             return "✅ Emergency override is ACTIVE!\n\n" +
                    "You can now disable device admin without password.\n" +
                    "Override expires in a few minutes.";
         }
         
+        // Check if password was recently verified
+        long lastVerification = prefs.getLong("last_password_verification", 0);
+        long currentTime = System.currentTimeMillis();
+        long verificationWindow = 30 * 1000; // 30 seconds window
+        
+        if (currentTime - lastVerification < verificationWindow) {
+            // Password was recently verified, allow disable
+            prefs.edit().remove("last_password_verification").apply();
+            return "✅ Password verified. Device admin will be disabled.";
+        }
+        
         // Show password dialog for protected state
         showPasswordDialog(context);
         
-        // Return message that will be shown while dialog is displayed
-        return "🔐 VOLT Uninstall Protection is ACTIVE!\n\n" +
-               "A password dialog will appear. You have 3 options:\n" +
-               "• Enter Password - Immediate disable\n" +
-               "• Request Override - 5-hour delay, then 15-min window\n" +
-               "• Cancel - Keep protection active\n\n" +
-               "Protection remains ACTIVE during override countdown!";
+        // CRITICAL: Return null to PREVENT disable until password is verified
+        // This blocks the disable request until proper authentication
+        return null;
     }
     
     private void showPasswordDialog(Context context) {
@@ -101,11 +110,18 @@ public class VoltDeviceAdminReceiver extends DeviceAdminReceiver {
                         }
                         
                         if (verifyPassword(context, password)) {
-                            Toast.makeText(context, "✅ Password verified. Device admin will be disabled.", Toast.LENGTH_LONG).show();
-                            Log.d(TAG, "Password verified successfully");
+                            // Store verification timestamp to allow disable
+                            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                            prefs.edit().putLong("last_password_verification", System.currentTimeMillis()).apply();
+                            
+                            Toast.makeText(context, "✅ Password verified. You can now disable device admin.", Toast.LENGTH_LONG).show();
+                            Log.d(TAG, "Password verified successfully - disable now allowed");
+                            
+                            // Trigger device admin disable request again
+                            triggerDeviceAdminDisable(context);
                         } else {
                             Toast.makeText(context, "❌ Incorrect password. Device admin remains active.", Toast.LENGTH_LONG).show();
-                            Log.d(TAG, "Password verification failed");
+                            Log.d(TAG, "Password verification failed - disable blocked");
                         }
                     });
                     
@@ -245,6 +261,20 @@ public class VoltDeviceAdminReceiver extends DeviceAdminReceiver {
         } catch (Exception e) {
             Log.e(TAG, "Error getting override state", e);
             return "none";
+        }
+    }
+
+    private void triggerDeviceAdminDisable(Context context) {
+        try {
+            // Open device admin settings to allow user to disable
+            Intent intent = new Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            
+            Toast.makeText(context, "Go to Device Administrators and disable VOLT within 30 seconds", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to open device admin settings", e);
+            Toast.makeText(context, "Please manually go to Settings > Security > Device Administrators and disable VOLT", Toast.LENGTH_LONG).show();
         }
     }
 

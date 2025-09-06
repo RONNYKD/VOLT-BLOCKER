@@ -157,8 +157,8 @@ export const MigrationTestComponent: React.FC<MigrationTestComponentProps> = ({
           }}
           value={userId}
           onChangeText={setUserId}
-          placeholder=\"Enter user ID to test migration\"
-          autoCapitalize=\"none\"
+          placeholder="Enter user ID to test migration"
+          autoCapitalize="none"
         />
       </View>
 

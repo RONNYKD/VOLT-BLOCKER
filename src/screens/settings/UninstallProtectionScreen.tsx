@@ -368,18 +368,6 @@ export const UninstallProtectionScreen: React.FC = () => {
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
             <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: '#00d4aa' }]}
-              onPress={() => setShowEnhancedSetup(true)}
-              disabled={isLoading}
-            >
-              <Text style={styles.actionButtonText}>
-                🛡️ Enhanced Protection Setup
-              </Text>
-            </TouchableOpacity>
-
-
-
-            <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}
               onPress={() => setShowSetupWizard(true)}
               disabled={isLoading}
@@ -388,49 +376,6 @@ export const UninstallProtectionScreen: React.FC = () => {
                 ⚙️ Setup Wizard
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.secondary }]}
-              onPress={() => setShowPasswordSetup(true)}
-              disabled={isLoading}
-            >
-              <Text style={styles.actionButtonText}>
-                🔐 Set Password
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.warning }]}
-              onPress={async () => {
-                if (!VoltUninstallProtection) {
-                  Alert.alert('Error', 'Uninstall protection is not available. The native module is not installed.');
-                  return;
-                }
-                try {
-                  const result = await VoltUninstallProtection.testUninstallProtection();
-                  Alert.alert(
-                    'Protection Test Results',
-                    `Device Admin: ${result.deviceAdminActive ? '✅' : '❌'}\n` +
-                    `Protection Enabled: ${result.protectionEnabled ? '✅' : '❌'}\n` +
-                    `Service Running: ${result.serviceRunning ? '✅' : '❌'}\n` +
-                    `Password Set: ${result.passwordSet ? '✅' : '❌'}\n` +
-                    `Overall Ready: ${result.ready ? '✅' : '❌'}\n\n` +
-                    `${result.message}`,
-                    [{ text: 'OK' }]
-                  );
-                } catch (error) {
-                  Alert.alert('Test Failed', 'Could not run protection test');
-                }
-              }}
-              disabled={isLoading}
-            >
-              <Text style={styles.actionButtonText}>
-                🧪 Test Protection
-              </Text>
-            </TouchableOpacity>
-
-
-
 
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.error }]}
