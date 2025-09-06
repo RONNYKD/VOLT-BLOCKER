@@ -10,6 +10,7 @@ import { useAuthStore, useBlockingStore } from '../store';
 import { errorHandler, ErrorSeverity } from '../utils';
 import { notificationPermissionService } from './permissions/NotificationPermissionService';
 import { focusSyncService } from './focus-sync';
+import { RecoveryDataSyncService } from './RecoveryDataSyncService';
 
 // Initialization result interface
 export interface AppInitializationResult {
@@ -160,6 +161,35 @@ export class AppInitializer {
           { context: 'app_init_auth' },
           ErrorSeverity.HIGH
         );
+      }
+
+      // Step 3.5: Sync user recovery data if authenticated
+      try {
+        console.log('🔄 Checking for user recovery data sync...');
+        
+        if (result.authReady && result.supabaseReady) {
+          const authStore = useAuthStore.getState();
+          const currentUser = authStore.user;
+          
+          if (currentUser) {
+            console.log('👤 User authenticated, syncing recovery data...');
+            const syncResult = await RecoveryDataSyncService.syncUserRecoveryData(currentUser.id);
+            
+            if (syncResult.success) {
+              console.log(`✅ Recovery data synced: ${syncResult.achievementCount} achievements restored`);
+            } else {
+              result.warnings.push(`Recovery data sync failed: ${syncResult.error}`);
+              console.warn('⚠️ Recovery data sync failed:', syncResult.error);
+            }
+          } else {
+            console.log('ℹ️ No authenticated user, skipping recovery data sync');
+          }
+        } else {
+          console.log('ℹ️ Auth or Supabase not ready, skipping recovery data sync');
+        }
+      } catch (error) {
+        result.warnings.push(`Recovery data sync failed: ${error}`);
+        console.warn('⚠️ Recovery data sync failed:', error);
       }
 
       // Step 4: Initialize native services

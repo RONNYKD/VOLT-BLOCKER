@@ -4,3 +4,4 @@
  */
 
 export * from './BlocksScreen';
+export * from './EmergencyAppTestScreen';

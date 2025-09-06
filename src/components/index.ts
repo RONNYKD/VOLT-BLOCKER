@@ -1,7 +1,9 @@
 /**
  * Components barrel file
- * Export all components from this file
  */
+
+// Feature Components
+export { default as EmergencyAppDemo } from './EmergencyAppDemo';
 
 // UI Components
 export * from './ui';

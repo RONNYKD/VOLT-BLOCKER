@@ -7,6 +7,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageUtils, StorageKeys, errorHandler, ErrorSeverity, secureStorage } from '../utils';
 import { supabase } from '../services/supabase';
+import { AppInitializationService } from '../services/AppInitializationService';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 export interface User {
@@ -150,6 +151,15 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false 
             });
+
+            // Sync user recovery data after successful login
+            try {
+              console.log('🔄 Syncing user recovery data after login...');
+              await AppInitializationService.handleUserLogin(user.id);
+            } catch (syncError) {
+              console.warn('⚠️ Recovery data sync failed after login:', syncError);
+              // Don't fail login for sync errors
+            }
           } else {
             throw new Error('Sign in failed: No user or session returned');
           }
@@ -219,6 +229,13 @@ export const useAuthStore = create<AuthState>()(
           
           // Clear secure storage
           await secureStorage.clearTokens();
+
+          // Clean up user recovery data
+          try {
+            await AppInitializationService.handleUserLogout();
+          } catch (cleanupError) {
+            console.warn('⚠️ Error cleaning up user data on logout:', cleanupError);
+          }
           
           set({ 
             user: null, 

@@ -24,3 +24,16 @@ export { notificationService } from './notifications/NotificationService';
 export * from './protection';
 export { uninstallProtectionService } from './protection/UninstallProtectionService';
 export { useUninstallProtectionStore } from './protection/store';
+
+// AI services
+export * from './ai';
+export { 
+  initializeAIServices, 
+  areAIServicesAvailable, 
+  getAIServicesStatus 
+} from './ai';
+
+// Legacy Data Migration Services
+export { legacyDataMigrationService } from './supabase/LegacyDataMigrationService';
+export { userLoginMigrationService } from './supabase/UserLoginMigrationService';
+export { testUserMigration, discoverLegacyData, forceMigration } from './supabase/testMigration';

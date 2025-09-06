@@ -20,8 +20,8 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Focus: undefined;
   Blocks: undefined;
+  AICoach: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
-  Test: undefined;
 };
 
 // Profile Stack Navigator

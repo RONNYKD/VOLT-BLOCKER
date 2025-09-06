@@ -3,6 +3,7 @@
  * Handles native app blocking functionality for Android with system app support
  */
 import { NativeModules, Alert } from 'react-native';
+import type { AppCategory } from '../../store/blocking-store';
 
 // Define the native module interface
 interface AppBlockingModule {
@@ -909,6 +910,158 @@ class AppBlockingService {
         ]
       );
     });
+  }
+
+  // ============ APP CATEGORIZATION UTILITIES ============
+
+  /**
+   * Categorize app based on package name patterns
+   * Returns 'emergency', 'critical', or 'regular'
+   */
+  categorizeApp(packageName: string): AppCategory {
+    if (!packageName) return 'regular';
+
+    const pkg = packageName.toLowerCase();
+
+    // Emergency Apps (1-minute cooldown)
+    const emergencyPatterns = [
+      // Phone/Dialer apps
+      'com.android.phone',
+      'com.android.dialer', 
+      'com.google.android.dialer',
+      'com.samsung.android.dialer',
+      'com.htc.android.phone',
+      'com.lge.phone',
+      'com.miui.phone',
+      'com.oneplus.dialer',
+      // Emergency service apps
+      'com.android.emergency',
+      'com.google.android.apps.maps', // Google Maps for emergency navigation
+      'com.waze', // Waze for emergency navigation
+      'com.mapquest.android.ace', // MapQuest
+      'com.here.app.maps', // HERE Maps
+      'com.sygic.aura', // Sygic GPS
+      'com.telenav.app.android.scout_us', // Scout GPS
+      // Medical/Health emergency apps
+      'com.apple.Health', // Apple Health (if somehow on Android)
+      'com.google.android.apps.healthdata', // Google Health
+      'com.samsung.android.app.health', // Samsung Health
+      'com.fitbit.FitbitMobile', // Fitbit (for medical alerts)
+      'com.medisafe.android', // Medisafe (medication reminders)
+      'com.epocrates', // Medical reference
+      'com.webmd.android', // WebMD
+      'com.firstresponder.android', // First responder apps
+      'com.redcross.firstaid', // Red Cross First Aid
+    ];
+
+    // Critical Apps (1-minute cooldown) 
+    const criticalPatterns = [
+      // Messaging apps for urgent communication
+      'com.android.mms',
+      'com.android.messaging',
+      'com.google.android.apps.messaging',
+      'com.samsung.android.messaging',
+      'com.textra',
+      'com.chomp.android.sms',
+      // WhatsApp, Signal, Telegram for emergency contacts
+      'com.whatsapp',
+      'org.thoughtcrime.securesms', // Signal
+      'org.telegram.messenger',
+      'com.viber.voip',
+      'com.skype.raider', // Skype
+      'com.discord', // Discord (for some emergency communities)
+      // Emergency contact apps
+      'com.android.contacts',
+      'com.google.android.contacts',
+      'com.samsung.android.app.contacts',
+      // Transportation for emergency situations
+      'com.uber.app', // Uber
+      'com.lyft.android', // Lyft
+      'com.mytaxi', // Free Now
+      'com.grabtaxi.passenger', // Grab
+      'com.olacabs.customer', // Ola
+      // Banking for emergency transactions
+      'com.paypal.android.p2pmobile', // PayPal
+      'com.venmo', // Venmo
+      'com.squareup.cash', // Cash App
+      'com.coinbase.android', // Coinbase (for some users)
+      'com.chase.sig.android', // Chase Bank
+      'com.bankofamerica.mobile', // Bank of America
+      'com.wellsfargo.mobile.android', // Wells Fargo
+      // Weather apps for emergency weather alerts
+      'com.weather.Weather',
+      'com.weather.underground.android',
+      'com.accuweather.android',
+      'com.wunderground.android.weather',
+    ];
+
+    // Check emergency patterns first
+    for (const pattern of emergencyPatterns) {
+      if (pkg.includes(pattern) || pkg === pattern) {
+        return 'emergency';
+      }
+    }
+
+    // Check critical patterns
+    for (const pattern of criticalPatterns) {
+      if (pkg.includes(pattern) || pkg === pattern) {
+        return 'critical';
+      }
+    }
+
+    // Default to regular (2-hour cooldown)
+    return 'regular';
+  }
+
+  /**
+   * Get cooldown minutes for app category
+   */
+  getCooldownForCategory(category: AppCategory): number {
+    switch (category) {
+      case 'emergency':
+      case 'critical':
+        return 1; // 1 minute for emergency/critical apps
+      case 'regular':
+      default:
+        return 120; // 2 hours for regular apps
+    }
+  }
+
+  /**
+   * Get user-friendly category name
+   */
+  getCategoryDisplayName(category: AppCategory): string {
+    switch (category) {
+      case 'emergency':
+        return 'Emergency App';
+      case 'critical':
+        return 'Critical App';
+      case 'regular':
+      default:
+        return 'Regular App';
+    }
+  }
+
+  /**
+   * Get category description for user
+   */
+  getCategoryDescription(category: AppCategory): string {
+    switch (category) {
+      case 'emergency':
+        return 'Essential for emergencies (Phone, Maps, Emergency Services) - 1 minute cooldown';
+      case 'critical':
+        return 'Important for urgent communication (Messages, Emergency Contacts) - 1 minute cooldown';
+      case 'regular':
+      default:
+        return 'Standard apps - 2 hour cooldown';
+    }
+  }
+
+  /**
+   * Check if app should show emergency warning
+   */
+  shouldShowEmergencyWarning(category: AppCategory): boolean {
+    return category === 'emergency' || category === 'critical';
   }
 
   // ============ UI HELPER METHODS ============

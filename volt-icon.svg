@@ -1,0 +1,6 @@
+<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" fill="#1E3A8A" rx="150"/>
+  <text x="512" y="580" font-family="Arial, sans-serif" font-size="300" font-weight="bold" text-anchor="middle" fill="white">VOLT</text>
+  <circle cx="512" cy="350" r="80" fill="#FCD34D"/>
+  <path d="M472 310 L552 310 L512 390 Z" fill="#1E3A8A"/>
+</svg>

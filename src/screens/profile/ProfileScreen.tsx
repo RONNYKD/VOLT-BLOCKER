@@ -2,13 +2,12 @@
  * Profile Screen - Opal-inspired settings and profile
  */
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Moon, Sun, Bell, Settings as SettingsIcon, Database, Shield } from 'lucide-react-native';
+import { Moon, Sun, Bell, Settings as SettingsIcon, Shield } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAppTheme } from '../../theme/nativewind-setup';
 import { useAuthStore, useSettingsStore, useFocusStore } from '../../store';
-import { StorageTestComponent } from '../../components/StorageTestComponent';
 import type { ProfileStackScreenProps } from '../../navigation/types';
 
 type Props = ProfileStackScreenProps<'ProfileMain'>;
@@ -18,7 +17,6 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const { user, isAuthenticated, signOut } = useAuthStore();
   const { theme, setTheme, notifications, setNotifications } = useSettingsStore();
   const { stats } = useFocusStore();
-  const [showDeveloperTools, setShowDeveloperTools] = useState(false);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
@@ -119,22 +117,6 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </TouchableOpacity>
 
-          {/* Developer Tools */}
-          <TouchableOpacity 
-            style={styles.settingItem} 
-            onPress={() => setShowDeveloperTools(true)}
-          >
-            <View style={styles.settingLeft}>
-              <Database size={20} color="#9b59b6" />
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Developer Tools
-              </Text>
-            </View>
-            <View style={styles.developerBadge}>
-              <Shield size={16} color="#00d4aa" />
-              <Text style={[styles.settingValue, { color: '#00d4aa' }]}>›</Text>
-            </View>
-          </TouchableOpacity>
 
           {/* Stats */}
           <View style={styles.statsContainer}>
@@ -229,109 +211,6 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* Developer Tools Modal */}
-      <Modal
-        visible={showDeveloperTools}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowDeveloperTools(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Developer Tools</Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowDeveloperTools(false)}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <StorageTestComponent />
-          
-          {/* Add Protection Debug Tools */}
-          <View style={{ padding: 20 }}>
-            <TouchableOpacity
-              style={{
-                backgroundColor: '#3498db',
-                padding: 16,
-                borderRadius: 8,
-                alignItems: 'center',
-                marginBottom: 12,
-              }}
-              onPress={() => {
-                // Test module connection inline
-                const { VoltUninstallProtection } = require('react-native').NativeModules;
-                if (VoltUninstallProtection) {
-                  VoltUninstallProtection.testConnection()
-                    .then((result: any) => {
-                      alert(`✅ Module Connected!\n${result.message}\nTimestamp: ${new Date(result.timestamp).toLocaleString()}`);
-                    })
-                    .catch((error: any) => {
-                      alert(`❌ Connection Failed!\n${error}`);
-                    });
-                } else {
-                  alert('❌ VoltUninstallProtection module not found!');
-                }
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: '600' }}>
-                🔧 Test Module Connection
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                backgroundColor: '#9b59b6',
-                padding: 16,
-                borderRadius: 8,
-                alignItems: 'center',
-                marginBottom: 12,
-              }}
-              onPress={() => {
-                // Quick debug test
-                const { VoltUninstallProtection } = require('react-native').NativeModules;
-                if (VoltUninstallProtection) {
-                  Promise.all([
-                    VoltUninstallProtection.hasProtectionPassword(),
-                    VoltUninstallProtection.checkSystemAlertWindowPermission(),
-                    VoltUninstallProtection.isDeviceAdminEnabled(),
-                  ]).then(([hasPassword, hasOverlay, hasAdmin]) => {
-                    alert(`🔍 Quick Debug:\n` +
-                          `Password Set: ${hasPassword ? '✅' : '❌'}\n` +
-                          `Overlay Permission: ${hasOverlay ? '✅' : '❌'}\n` +
-                          `Device Admin: ${hasAdmin ? '✅' : '❌'}`);
-                  }).catch((error) => {
-                    alert(`❌ Debug Failed: ${error}`);
-                  });
-                } else {
-                  alert('❌ Module not found!');
-                }
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: '600' }}>
-                🔍 Quick Debug Check
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                backgroundColor: '#ff6b6b',
-                padding: 16,
-                borderRadius: 8,
-                alignItems: 'center',
-              }}
-              onPress={() => {
-                setShowDeveloperTools(false);
-                navigation.navigate('UninstallProtection');
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: '600' }}>
-                🛡️ Test Uninstall Protection
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -478,45 +357,9 @@ const styles = StyleSheet.create({
   linkButtonText: {
     fontSize: 16,
   },
-  developerBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
   protectionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });

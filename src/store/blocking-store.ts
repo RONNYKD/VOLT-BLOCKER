@@ -7,13 +7,18 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { appBlockingService, websiteBlockingService, type InstalledApp, type AppUsageStats } from '../services/native';
 
+// App category types for cooldown management
+export type AppCategory = 'emergency' | 'critical' | 'regular';
+
 export interface BlockedApp {
     id: string;
     packageName: string;
     appName: string;
     iconUrl?: string;
     isBlocked: boolean;
-    category?: string;
+    category?: string; // Legacy field - kept for backwards compatibility
+    appCategory: AppCategory; // New field for emergency/critical/regular categorization
+    cooldownMinutes?: number; // Optional override for specific cooldown duration
     addedAt: string;
     updatedAt: string;
 }
@@ -112,8 +117,14 @@ export const useBlockingStore = create<BlockingState>()(
 
             // App blocking actions
             addBlockedApp: (appData) => {
+                // Auto-categorize app if not provided
+                const category = appData.appCategory ?? appBlockingService.categorizeApp(appData.packageName);
+                const cooldownMinutes = appData.cooldownMinutes ?? appBlockingService.getCooldownForCategory(category);
+                
                 const newApp: BlockedApp = {
                     ...appData,
+                    appCategory: category,
+                    cooldownMinutes,
                     id: generateId(),
                     addedAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
@@ -379,7 +390,40 @@ export const useBlockingStore = create<BlockingState>()(
         }),
         {
             name: 'volt-blocking',
+            version: 2, // Increment version for emergency cooldown feature
             storage: createJSONStorage(() => AsyncStorage),
+            migrate: (persistedState: any, version: number) => {
+                console.log('Migrating blocking store from version:', version);
+                
+                // Migration from v1 to v2: Add appCategory and cooldownMinutes to existing blocked apps
+                if (version < 2) {
+                    console.log('Migrating to v2: Adding app categories and cooldown support');
+                    
+                    if (persistedState.blockedApps) {
+                        persistedState.blockedApps = persistedState.blockedApps.map((app: any) => {
+                            // Skip if already migrated
+                            if (app.appCategory) return app;
+                            
+                            // Categorize based on package name
+                            const appCategory = appBlockingService.categorizeApp(app.packageName || '');
+                            const cooldownMinutes = appBlockingService.getCooldownForCategory(appCategory);
+                            
+                            return {
+                                ...app,
+                                appCategory,
+                                cooldownMinutes,
+                            };
+                        });
+                    }
+                    
+                    // Initialize disable requests map if not present
+                    if (!persistedState.disableRequests) {
+                        persistedState.disableRequests = {};
+                    }
+                }
+                
+                return persistedState;
+            },
             // Don't persist loading states or installed apps
             partialize: (state) => ({
                 blockedApps: state.blockedApps,

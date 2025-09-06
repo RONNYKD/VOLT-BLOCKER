@@ -1,5 +1,5 @@
 /**
- * Login Screen - Simple and user-friendly authentication
+ * Login Screen - Professional and elegant authentication
  */
 import React, { useState } from 'react';
 import { 
@@ -11,7 +11,10 @@ import {
   KeyboardAvoidingView, 
   Platform,
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions,
+  StatusBar,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -52,126 +55,154 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handleQuickDemo = () => {
-    // Pre-fill demo credentials to reduce typing
-    setEmail('demo@volt.app');
-    setPassword('demo123');
-  };
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
-          {/* Simple Logo Section */}
-          <View style={styles.logoSection}>
-            <LinearGradient
-              colors={['#00d4aa', '#00ffff']}
-              style={styles.logo}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.logoText}>V</Text>
-            </LinearGradient>
-            <Text style={styles.appName}>VOLT</Text>
-            <Text style={styles.tagline}>Welcome back!</Text>
-          </View>
-
-          {/* Simple Form */}
-          <View style={styles.formSection}>
-            {/* Email Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="your@email.com"
-                placeholderTextColor="#666"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
-                returnKeyType="next"
-              />
+        {/* Professional Background */}
+        <View style={styles.backgroundOverlay}>
+          <View style={styles.gradientAccent} />
+        </View>
+        
+        <View style={styles.scrollContainer}>
+          <ScrollView 
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Enhanced Logo Section */}
+            <View style={styles.logoSection}>
+              <View style={styles.logoContainer}>
+                <LinearGradient
+                  colors={['#00d4aa', '#00ffff']}
+                  style={styles.logo}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={styles.logoText}>V</Text>
+                </LinearGradient>
+                <View style={styles.logoGlow} />
+              </View>
+              <Text style={styles.appName}>VOLT</Text>
+              <Text style={styles.tagline}>Welcome back to your focus journey</Text>
             </View>
 
-            {/* Password Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Your password"
-                placeholderTextColor="#666"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
-                returnKeyType="go"
-                onSubmitEditing={handleSignIn}
-              />
+            {/* Professional Form */}
+            <View style={styles.formSection}>
+              <View style={styles.formCard}>
+                <Text style={styles.formTitle}>Sign In</Text>
+                
+                {/* Email Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email Address</Text>
+                  <View style={styles.inputContainer}>
+                    <View style={styles.inputIcon}>
+                      <Text style={styles.iconText}>✉</Text>
+                    </View>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="Enter your email"
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!isLoading}
+                      returnKeyType="next"
+                    />
+                  </View>
+                </View>
+
+                {/* Password Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <View style={styles.inputContainer}>
+                    <View style={styles.inputIcon}>
+                      <Text style={styles.iconText}>🔒</Text>
+                    </View>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="Enter your password"
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!isLoading}
+                      returnKeyType="go"
+                      onSubmitEditing={handleSignIn}
+                    />
+                  </View>
+                </View>
+
+                {/* Professional Sign In Button */}
+                <TouchableOpacity
+                  style={[styles.signInButton, isLoading && styles.signInButtonDisabled]}
+                  onPress={handleSignIn}
+                  disabled={isLoading}
+                  activeOpacity={0.9}
+                >
+                  <LinearGradient
+                    colors={isLoading ? ['#666', '#888'] : ['#00d4aa', '#00ffff']}
+                    style={styles.signInGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="#000" size="small" />
+                    ) : (
+                      <>
+                        <Text style={styles.signInButtonText}>Sign In</Text>
+                        <Text style={styles.buttonIcon}>→</Text>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Forgot Password */}
+                <TouchableOpacity
+                  style={styles.forgotPassword}
+                  onPress={() => navigation.navigate('ForgotPassword')}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Quick Demo Button */}
-            <TouchableOpacity
-              style={styles.demoButton}
-              onPress={handleQuickDemo}
-              disabled={isLoading}
-            >
-              <Text style={styles.demoButtonText}>📱 Try Demo Account</Text>
-            </TouchableOpacity>
-
-            {/* Sign In Button */}
-            <TouchableOpacity
-              style={[styles.signInButton, isLoading && styles.signInButtonDisabled]}
-              onPress={handleSignIn}
-              disabled={isLoading}
-            >
-              <LinearGradient
-                colors={isLoading ? ['#666', '#888'] : ['#00d4aa', '#00ffff']}
-                style={styles.signInGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+            {/* Professional Footer */}
+            <View style={styles.footer}>
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>New to VOLT?</Text>
+                <View style={styles.dividerLine} />
+              </View>
+              
+              <TouchableOpacity
+                style={styles.createAccountButton}
+                onPress={() => navigation.navigate('Register')}
+                disabled={isLoading}
+                activeOpacity={0.8}
               >
-                {isLoading ? (
-                  <ActivityIndicator color="#000" size="small" />
-                ) : (
-                  <Text style={styles.signInButtonText}>Sign In</Text>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-
-            {/* Forgot Password */}
-            <TouchableOpacity
-              style={styles.forgotPassword}
-              onPress={() => navigation.navigate('ForgotPassword')}
-              disabled={isLoading}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Simple Footer */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.createAccountButton}
-              onPress={() => navigation.navigate('Register')}
-              disabled={isLoading}
-            >
-              <Text style={styles.createAccountText}>
-                New to VOLT? <Text style={styles.createAccountLink}>Create Account</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <Text style={styles.createAccountText}>Create Your Account</Text>
+                <Text style={styles.createAccountArrow}>↗</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
+
+const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -181,96 +212,205 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  content: {
+  backgroundOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 0,
+  },
+  gradientAccent: {
+    position: 'absolute',
+    top: -100,
+    left: -50,
+    width: width * 0.8,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(0, 212, 170, 0.05)',
+    transform: [{ rotate: '45deg' }],
+  },
+  scrollContainer: {
     flex: 1,
-    justifyContent: 'space-between',
+    zIndex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingTop: 40,
+    paddingBottom: 40,
+    minHeight: height - 100,
   },
   logoSection: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 20,
     marginBottom: 40,
   },
+  logoContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
   logo: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    shadowColor: '#00d4aa',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 15,
+  },
+  logoGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(0, 212, 170, 0.1)',
+    zIndex: -1,
   },
   logoText: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 36,
+    fontWeight: '900',
     color: '#000',
+    letterSpacing: -1,
   },
   appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '800',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 12,
+    letterSpacing: 1.5,
   },
   tagline: {
-    fontSize: 16,
-    color: '#00d4aa',
-    fontWeight: '500',
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 280,
   },
   formSection: {
-    flex: 1,
-    justifyContent: 'center',
     maxWidth: 400,
     alignSelf: 'center',
     width: '100%',
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  formCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  formTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 28,
+    letterSpacing: 0.5,
   },
   inputGroup: {
     marginBottom: 20,
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#fff',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 4,
+    height: 52,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  inputIcon: {
+    width: 44,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  iconText: {
+    fontSize: 16,
+    opacity: 0.7,
   },
   textInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    height: 50,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    flex: 1,
+    paddingHorizontal: 14,
+    fontSize: 15,
     color: '#fff',
-  },
-  demoButton: {
-    backgroundColor: 'rgba(0, 212, 170, 0.2)',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  demoButtonText: {
-    color: '#00d4aa',
-    fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   signInButton: {
+    marginTop: 12,
     marginBottom: 16,
+    shadowColor: '#00d4aa',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
   },
   signInButtonDisabled: {
     opacity: 0.6,
+    shadowOpacity: 0,
   },
   signInGradient: {
-    height: 50,
-    borderRadius: 25,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   signInButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '700',
     color: '#000',
+    marginRight: 6,
+    letterSpacing: 0.3,
+  },
+  buttonIcon: {
+    fontSize: 18,
+    color: '#000',
+    fontWeight: 'bold',
   },
   forgotPassword: {
     alignItems: 'center',
@@ -278,23 +418,50 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontSize: 14,
-    color: '#00d4aa',
+    color: 'rgba(0, 212, 170, 0.8)',
     fontWeight: '500',
   },
   footer: {
     alignItems: 'center',
+    paddingTop: 20,
     paddingBottom: 20,
   },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    width: '100%',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  dividerText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginHorizontal: 14,
+    fontWeight: '500',
+  },
   createAccountButton: {
-    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   createAccountText: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
-  },
-  createAccountLink: {
-    color: '#00d4aa',
+    fontSize: 15,
+    color: '#fff',
     fontWeight: '600',
+    marginRight: 6,
+  },
+  createAccountArrow: {
+    fontSize: 14,
+    color: '#00d4aa',
+    fontWeight: 'bold',
   },
 });

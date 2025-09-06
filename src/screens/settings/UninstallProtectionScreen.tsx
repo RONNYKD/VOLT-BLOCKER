@@ -142,39 +142,6 @@ export const UninstallProtectionScreen: React.FC = () => {
     }
   };
 
-  const handleRunHealthCheck = async () => {
-    if (!VoltUninstallProtection) {
-      Alert.alert('Error', 'Uninstall protection is not available. The native module is not installed.');
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const result = await VoltUninstallProtection.runHealthCheck();
-
-      const healthEmoji = {
-        healthy: '✅',
-        degraded: '⚠️',
-        critical: '❌'
-      };
-
-      Alert.alert(
-        `${healthEmoji[result.overallHealth]} Health Check Results`,
-        `Overall Status: ${result.overallHealth.toUpperCase()}\n\n` +
-        Object.entries(result.layerResults).map(([layer, status]: [string, any]) =>
-          `${layer}: ${status.status} - ${status.message}`
-        ).join('\n'),
-        [{ text: 'OK' }]
-      );
-
-      await loadProtectionStatus();
-    } catch (error) {
-      console.error('Failed to run health check:', error);
-      Alert.alert('Error', 'Failed to run health check');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleRequestEmergencyOverride = async () => {
     if (!VoltUninstallProtection) {
@@ -410,36 +377,7 @@ export const UninstallProtectionScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.primary }]}
-              onPress={handleRunHealthCheck}
-              disabled={isLoading}
-            >
-              <Text style={styles.actionButtonText}>
-                🔍 Run Health Check
-              </Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: '#28a745' }]}
-              onPress={async () => {
-                if (!VoltUninstallProtection) {
-                  Alert.alert('Error', 'Native module not available');
-                  return;
-                }
-                try {
-                  const result = await VoltUninstallProtection.test();
-                  Alert.alert('Native Module Test', result);
-                } catch (error) {
-                  Alert.alert('Test Failed', `Error: ${error}`);
-                }
-              }}
-              disabled={isLoading}
-            >
-              <Text style={styles.actionButtonText}>
-                🧪 Test Native Module
-              </Text>
-            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}
@@ -491,85 +429,8 @@ export const UninstallProtectionScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.secondary }]}
-              onPress={async () => {
-                if (!VoltUninstallProtection) {
-                  Alert.alert('Error', 'Uninstall protection is not available. The native module is not installed.');
-                  return;
-                }
-                try {
-                  const success = await VoltUninstallProtection.showPasswordOverlay('manual_test');
-                  if (!success) {
-                    Alert.alert('Error', 'Failed to show password overlay');
-                  }
-                } catch (error) {
-                  Alert.alert('Error', 'Failed to show password overlay');
-                }
-              }}
-              disabled={isLoading}
-            >
-              <Text style={styles.actionButtonText}>
-                🔐 Test Password Overlay
-              </Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.info || '#17a2b8' }]}
-              onPress={async () => {
-                if (!VoltUninstallProtection) {
-                  Alert.alert('Error', 'Uninstall protection is not available. The native module is not installed.');
-                  return;
-                }
-                try {
-                  const debugInfo = await VoltUninstallProtection.debugPasswordStorage();
-                  Alert.alert(
-                    'Password Debug Info',
-                    `Has Stored Hash: ${debugInfo.hasStoredHash ? '✅' : '❌'}\n` +
-                    `Hash Preview: ${debugInfo.hashPreview || 'N/A'}\n` +
-                    `Hash Length: ${debugInfo.hashLength || 0}\n` +
-                    `Test Hash Preview: ${debugInfo.testHashPreview || 'N/A'}\n` +
-                    `Hashes Match (test123): ${debugInfo.hashesMatch ? '✅' : '❌'}\n` +
-                    `Error: ${debugInfo.hashError || 'None'}`,
-                    [{ text: 'OK' }]
-                  );
-                } catch (error) {
-                  Alert.alert('Debug Failed', `Error: ${error}`);
-                }
-              }}
-              disabled={isLoading}
-            >
-              <Text style={styles.actionButtonText}>
-                🔍 Debug Password
-              </Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: '#6c757d' }]}
-              onPress={async () => {
-                if (!VoltUninstallProtection) {
-                  Alert.alert('Error', 'Uninstall protection is not available. The native module is not installed.');
-                  return;
-                }
-                try {
-                  const result = await VoltUninstallProtection.requestDeviceAdminPermission();
-                  Alert.alert(
-                    'Device Admin Request Result',
-                    `Success: ${result.success ? '✅' : '❌'}\n` +
-                    `Settings Opened: ${result.settingsOpened ? '✅' : '❌'}\n` +
-                    `Message: ${result.message}`,
-                    [{ text: 'OK' }]
-                  );
-                } catch (error) {
-                  Alert.alert('Request Failed', `Error: ${error}`);
-                }
-              }}
-              disabled={isLoading}
-            >
-              <Text style={styles.actionButtonText}>
-                ⚙️ Test Settings Open
-              </Text>
-            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.error }]}

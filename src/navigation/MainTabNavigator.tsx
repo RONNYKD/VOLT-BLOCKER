@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Focus, Shield, User, TestTube } from 'lucide-react-native';
+import { Focus, Shield, User, Bot } from 'lucide-react-native';
 import { useAppTheme } from '../theme/nativewind-setup';
 import type { MainTabParamList } from './types';
 
@@ -11,7 +11,7 @@ import type { MainTabParamList } from './types';
 import { FocusScreen } from '../screens/focus/FocusScreen';
 import { BlocksScreen } from '../screens/blocks/BlocksScreen';
 import { ProfileStackNavigator } from './ProfileStackNavigator';
-import { ProtectionTestComponent } from '../components/protection';
+import { AICoachScreen } from '../screens/ai/AICoachScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -61,6 +61,16 @@ export const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
+        name="AICoach"
+        component={AICoachScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Bot size={size} color={color} />
+          ),
+          tabBarLabel: 'AI Coach',
+        }}
+      />
+      <Tab.Screen
         name="Profile"
         component={ProfileStackNavigator}
         options={{
@@ -68,16 +78,6 @@ export const MainTabNavigator: React.FC = () => {
             <User size={size} color={color} />
           ),
           tabBarLabel: 'Profile',
-        }}
-      />
-      <Tab.Screen
-        name="Test"
-        component={ProtectionTestComponent}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <TestTube size={size} color={color} />
-          ),
-          tabBarLabel: 'Test',
         }}
       />
 
